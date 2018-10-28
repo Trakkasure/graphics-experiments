@@ -3,14 +3,15 @@ const path=require('path');
 // const fs=require('fs');
 
 const SRC = path.resolve(__dirname,'index.js');
+const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
     entry: {
       'ui': SRC
     }
-  , resolve: {
-      extensions: ['.js', '.jsx','.ts]
-    }
+  // , resolve: {
+  //     extensions: ['.js', '.jsx','.ts]
+  //   }
   , output: {
       path: DST
     , filename: '[name].js'
