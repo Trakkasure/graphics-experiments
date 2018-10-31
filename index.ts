@@ -1,6 +1,8 @@
 import rough from 'roughjs';
-import {Food, Poison, Player, Animator} from './objects.ts';
+import {Food, Poison, Player, Animator, Axis, VLine, Vector2D, Point2D} from './objects.ts';
 import {random} from './utils.ts';
+import { Obstacle } from './objects';
+import { RoughCanvas } from 'roughjs/bin/canvas';
 
 // attrbutes set on canvas element
 const canvasContainerSelector = "#canvas";
@@ -15,8 +17,14 @@ function createStyles() {
     el.setAttribute('type','text/css');
     el.setAttribute('id','styles');
     const text=document.createTextNode(`
+        ${canvasContainerSelector} {
+            margin: 0;
+            padding: 0;
+        }
         ${canvasContainerSelector} canvas {
             background: black;
+            margin: 0;
+            padding: 0;
         }
     `);
     el.appendChild(text);
@@ -34,10 +42,10 @@ const rc = rough
 window.rc=rc;
 const foodCount = 10;
 const poisonCount = 10;
-const playerCount = 5;
+const playerCount = 1;
 
-const obstacles = new Array(foodCount+poisonCount);
-const players = new Array(playerCount);
+const obstacles = new Array<Obstacle>(foodCount+poisonCount);
+const players = new Array<Player>(playerCount);
 
 for (let i = 0; i < foodCount;i++) {
     obstacles[i]=new Food(random(80,canvasAttributes.width-80),random(80,canvasAttributes.height-80));
@@ -46,23 +54,28 @@ for (let i = 0; i < poisonCount;i++) {
     obstacles[foodCount+i]=new Poison(random(80,canvasAttributes.width-80),random(80,canvasAttributes.height-80));
 }
 for (let i = 0; i < playerCount;i++) {
-    players[i]=new Player(random(100,canvasAttributes.width-100),random(80,canvasAttributes.height-100));
-    players[i].setAngle(random(0,360));
+    players[i]=new Player(random(100,canvasAttributes.width-100),random(80,canvasAttributes.height-100),1,1);
+    players[i].accelleration=new Vector2D({mx:0,my:0});
+    players[i].maxSpeed=5;
+    // players[i].setAngle(random(0,360));
+    // players[i].setAngle(0);
 }
+
 // requestAnimationFrame(drawing.bind(null,rc));
 
-let mouse={x:0,y:0};
-
+const canvasBounds=rc.canvas.getBoundingClientRect();
+let offsetX=canvasBounds.x;
+let offsetY=canvasBounds.y;
 rc.canvas.addEventListener("mousemove",function(e) {
-    mouse={x:e.clientX,y:e.clientY};
+    const mouse=new Point2D(e.clientX-offsetX,e.clientY-offsetY);
     players.forEach(p=>{
-        // const velocity=Math.sqrt(Math.pow(mouse.x-p.x,2)+Math.pow(mouse.y-p.y,2));
-        const angle=Math.atan2((mouse.y-p.p.y),(mouse.x-p.p.x))*180/Math.PI;
-        // console.log(p.angle*180/Math.PI,angle);
-        p.setAngle(angle);
+        p.attractToPoint(mouse);
     });
 });
 
+rc.canvas.addEventListener("click",function(e) {
+    players[0].applyForce(players[0].velocity.scale(-1));
+});
 document.getElementById('start').addEventListener('click',()=>{
     ani.start();
 });
@@ -73,5 +86,14 @@ document.getElementById('stop').addEventListener('click',()=>{
 const ani=new Animator(rc);
 ani.add(obstacles);
 ani.add(players);
+ani.tick=(time,surface)=> {
+    
+}
+
+const line= new VLine(150,0);
+// players[0].link(line);
+// players[1].attach(line);
+// players[2].attach(line);
+//ani.add(line);
 ani.draw(); // draw once
 

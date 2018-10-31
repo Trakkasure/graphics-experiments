@@ -19,6 +19,7 @@ interface DrawOptions {
     fillWeight?: number;
     hachureAngle?: number;
     hachureGap?: number;
+    fill?: string;
 }
 
 export interface Drawing {

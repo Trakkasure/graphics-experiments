@@ -2,7 +2,7 @@ const path=require('path');
 // const webpack=require('webpack');
 // const fs=require('fs');
 
-const SRC = path.resolve(__dirname,'index.js');
+const SRC = path.resolve(__dirname,'index.ts');
 const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
