@@ -3,11 +3,13 @@ const path=require('path');
 // const fs=require('fs');
 
 const SRC = path.resolve(__dirname,'index.ts');
+const SRC2 = path.resolve(__dirname,'charts.js');
 const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
     entry: {
-      'ui': SRC
+      'ui': SRC,
+      'bc': SRC2
     }
   // , resolve: {
   //     extensions: ['.js', '.jsx','.ts]
