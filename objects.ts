@@ -187,12 +187,12 @@ export abstract class Movable extends Drawable {
     position: Point2D;
 
     // Velocity: Change to position.
-    velocity: Vector2D;
+    velocity: Vector2D=new Vector2D(0,0);
 
     maxSpeed: number=0;
 
     // Change to velocity
-    accelleration: Vector2D=new Vector2D({mx:0,my:0});
+    accelleration: Vector2D=new Vector2D(0,0);
     
     // Mass of Movable
     mass: number;
@@ -200,15 +200,14 @@ export abstract class Movable extends Drawable {
     private _linkedTo: Drawable[]=[];
     private _attachedTo: Drawable[]=[];
 
-    constructor(x: number, y: number, angle: number=0, magnitude: number=0) {
+    constructor(x: number, y: number) {
         super();
         this.position = new Point2D(x,y);
-        this.velocity = new Vector2D({angle,magnitude});
     }
 
-    // Handle default movement based on "v".
+    // Handle default movement based on "accelleration".
     tick(time:number=0,surface: RoughCanvas): void {
-        this.velocity = this.velocity.add(this.accelleration).limit(this.mass/5);
+        this.velocity = this.velocity.add(this.accelleration).limit(this.maxSpeed);
         this.position = this.position.add(this.velocity);
         (!(time%10))&&this.refresh(surface);
     }
@@ -241,17 +240,8 @@ export abstract class Movable extends Drawable {
         this.position = new Point2D(x,y);
     }
 
-    /**
-     * Move origin along the current vector.
-     * @param stepping Perportional Amount to move along vector based on magnitude.
-     * @return the new origin.
-     */
-    move(stepping: number): Point2D {
-        return this.position;
-    }
-
     applyForce(f: Vector2D) {
-        this.accelleration=this.accelleration.add(f);//.scale(1/(this.mass*this.mass)));
+        this.accelleration=f;//this.accelleration.add(f);
     }
 }
 
@@ -273,7 +263,7 @@ export class Obstacle extends Drawable {
         this.scale=scale;
     }
 
-    refresh(surface: RoughCanvas,color: string) {
+    refresh(surface: RoughCanvas,color: string="red") {
         this.drawing=surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
     }
 
@@ -290,24 +280,46 @@ export class Obstacle extends Drawable {
     }
 }
 
-export class Player extends Movable  {
+export class Ball extends Movable {
 
-    path: string;
+    size: number;
+    color: string = "blue";
+    constructor(x: number=0 , y: number=0, size: number=25, mass: number=1) {
+        super(x, y);
+        this.position = new Point2D(x,y);
+        this.size=size;
+        this.mass=mass;
+    }
+
+    tick(time: number=0,surface: RoughCanvas): void {
+        super.tick(time,surface);
+        if (this.position.x+this.size >= surface.canvas.width
+        ||  this.position.y+this.size >= surface.canvas.height
+        ||  this.position.x-this.size <=0 
+        ||  this.position.y-this.size <=0
+        )
+            if (this.velocity.my > 0) this.velocity=this.velocity.mult(-1);
+    }
+
+    refresh(surface: RoughCanvas): void {
+        this.drawing = surface.generator.circle(0,0,this.size,{stroke:this.color,fillStyle:'solid',fill:this.color});
+    }
+}
+export class Player extends Movable  {
 
     private _attractionVector: Vector2D;
     private _friction: number;
 
-    constructor(x: number=0,y: number=0,angle: number=0,magnitude: number=0) {
-        super(x,y,angle,magnitude);
+    constructor(x: number=0,y: number=0) {
+        super(x,y);
         this._attractionVector=new Vector2D(0,0);
         this.mass=16;
         this._friction=0.25;
         this.offset=new Point2D(16,0);
-        this.setAngle(angle); // adjust for rotation.
     }
 
     tick(time,surface) {
-        this.accelleration=this._attractionVector.sub(this.position).scale(1/(this.mass*this.mass));
+        this.accelleration=this._attractionVector.sub(this.position).limit(5);
         super.tick(time,surface);
     }
 
@@ -318,9 +330,9 @@ export class Player extends Movable  {
         this.drawing=surface.generator.path('L -32 8 L -32 -8Z',{stroke: "white"});
     }
 
-    setAngle(a: number) {
-        this.velocity=new Vector2D({angle:a*(Math.PI/180), magnitude: this.velocity.magnitude});
-    }
+    // setAngle(a: number) {
+    //     this.velocity=new Vector2D({angle:a*(Math.PI/180), magnitude: this.velocity.magnitude});
+    // }
 
 }
 

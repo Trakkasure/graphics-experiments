@@ -1,5 +1,5 @@
 import rough from 'roughjs';
-import {Food, Poison, Player, Animator, Axis, VLine, Vector2D, Point2D} from './objects.ts';
+import {Ball, Food, Poison, Player, Animator, Axis, VLine, Vector2D, Point2D} from './objects.ts';
 import {random} from './utils.ts';
 import { Obstacle } from './objects';
 import { RoughCanvas } from 'roughjs/bin/canvas';
@@ -53,9 +53,11 @@ for (let i = 0; i < foodCount;i++) {
 for (let i = 0; i < poisonCount;i++) {
     obstacles[foodCount+i]=new Poison(random(80,canvasAttributes.width-80),random(80,canvasAttributes.height-80));
 }
+const velocity=new Vector2D(0,0);
+const accelleration=velocity;
 for (let i = 0; i < playerCount;i++) {
-    players[i]=new Player(random(100,canvasAttributes.width-100),random(80,canvasAttributes.height-100),1,1);
-    players[i].accelleration=new Vector2D({mx:0,my:0});
+    players[i]=new Player(random(100,canvasAttributes.width-100),random(80,canvasAttributes.height-100),velocity);
+    players[i].accelleration=accelleration;
     players[i].maxSpeed=5;
     // players[i].setAngle(random(0,360));
     // players[i].setAngle(0);
@@ -84,11 +86,16 @@ document.getElementById('stop').addEventListener('click',()=>{
 });
 
 const ani=new Animator(rc);
-ani.add(obstacles);
-ani.add(players);
-ani.tick=(time,surface)=> {
+const ball = new Ball(350,350)
+ball.velocity=new Vector2D(0,0);
+ball.applyForce(new Vector2D(0,1));
+ball.maxSpeed=25;
+// ani.add(obstacles);
+ani.add(ball);
+// ani.add(players);
+// ani.tick=(time,surface)=> {
     
-}
+// }
 
 const line= new VLine(150,0);
 // players[0].link(line);
