@@ -8,8 +8,8 @@ const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
     entry: {
-      'ui': SRC,
-      'bc': SRC2
+      'ui': SRC
+    // , 'bc': SRC2
     }
   // , resolve: {
   //     extensions: ['.js', '.jsx','.ts]
@@ -27,7 +27,7 @@ module.exports = {
             loader: 'babel-loader'
           , options: {
                 presets: [
-                    '@babel/preset-env',
+                    ['@babel/preset-env',{"targets": "> 0.25%, not dead"}],
                     '@babel/preset-react',
                     '@babel/preset-typescript'
                 ]

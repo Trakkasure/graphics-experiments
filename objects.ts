@@ -1,4 +1,5 @@
-import {RoughCanvas, Drawing} from './RoughCanvas';
+import { RoughCanvas } from "roughjs/bin/canvas";
+import { Drawable } from "roughjs/bin/core";
 
 export class Point2D {
     // Point
@@ -56,14 +57,6 @@ export class Vector2D {
         }
     }
 
-    toString() {
-        return `[${this.mx},${this.my}/${this.angle*180/Math.PI}°,${this.magnitude}→]`;
-    }
-
-    valueOf() {
-        return `[${this.mx},${this.my}/${this.angle*180/Math.PI}°,${this.magnitude}→]`;
-    }
-
     /**
      * Add the ivector with another.
      * @param v Vector to add
@@ -82,7 +75,7 @@ export class Vector2D {
      * Subtract the vector with another.
      * @param v Vector to subtract
      */
-    sub(v: Vector2D | Point2D):Vector2D {
+    sub(v: Vector2D | Point2D | number):Vector2D {
         if (typeof(v)==='number') {
             return new Vector2D(this.mx-v,this.my-v);
         }
@@ -100,6 +93,13 @@ export class Vector2D {
         return new Vector2D({angle:this.angle,magnitude:this.magnitude*scale});
     }
 
+    rotate(angle: number): Vector2D {
+        var mx = this.mx;
+        var c = Math.cos(angle);
+        var s = Math.sin(angle);
+        return new Vector2D(c * this.mx - s * this.my, s * mx + c * this.my);
+    }
+  
     /**
      * Multiply vector with another vector.
      * @param v Vector to multiply with
@@ -110,7 +110,6 @@ export class Vector2D {
         }
         if (v instanceof Point2D) {
             v = new Vector2D(v.x,v.y);
-            // return new Vector2D({angle:this.angle,magnitude:this.magnitude*(Math.sqrt(v.x*v.x+v.y*v.y))})
         }
         return new Vector2D({mx:v.mx*this.mx,my:v.my*this.my});
     }
@@ -134,27 +133,48 @@ export class Vector2D {
      * Get a normalized version of the vector. (Magnatude of 1)
      */
     normalize(): Vector2D {
-        return new Vector2D({mx:this.mx/this.magnitude,my:this.my/this.magnitude});
+        return this.magnitude>0?this.div(this.magnitude):this;
     }
 
-    limit(magnitude: number) {
+    limit(magnitude: number): Vector2D {
         if (this.magnitude > magnitude) {
             return this.normalize().mult(magnitude);
         }
         return this;
     }
-    
+   
+    angleBetween(v: Vector2D): number {
+        return Math.acos(this.dot(v) / Math.sqrt(this.magnitude*this.magnitude * v.magnitude*this.magnitude));
+    };
 
+    dist(v: Vector2D): number {
+        const dx=Math.pow(this.mx-v.mx,2);
+        const dy=Math.pow(this.my-v.my,2);
+        return Math.sqrt(dx+dy);
+    }
+
+    dot(v: Vector2D): number {
+        return this.mx*v.mx+this.my*v.my;
+    }
+
+    lerp(v: Vector2D, amt:number): Vector2D
+    lerp(mx: number, my: number,amt: number): Vector2D 
+    lerp(v,my,amt?) {
+        const lerpVal = (start:number, stop:number, amt:number)=>start+(stop-start)*amt;
+        var mx:number=v;
+        (v instanceof Vector2D)&&(amt=my,{mx,my}=v);
+        return new Vector2D(lerpVal(this.mx,mx,amt),lerpVal(this.my,my,amt));
+    }
 }
 
-export abstract class Drawable {
+export abstract class Drawing {
 
     surface: RoughCanvas;
-    drawing: Drawing;
+    drawing: Drawable;
     offset: Point2D=new Point2D(0,0);
 
     /** 
-     * Re-create the Drawable object.
+     * Re-create the Drawing object.
      */
     abstract refresh(surface: RoughCanvas): void;
 
@@ -170,8 +190,8 @@ export abstract class Drawable {
         surface.ctx.restore();
     }
 }
-    
-export abstract class CompositeDrawable extends Drawable {
+
+export abstract class CompositeDrawing extends Drawing {
 
     drawings: Drawing[]=null;
 
@@ -181,7 +201,7 @@ export abstract class CompositeDrawable extends Drawable {
         this.drawings.forEach(surface.draw.bind(surface));
     }
 }
-export abstract class Movable extends Drawable {
+export abstract class Movable extends Drawing {
     
     // Point: Position
     position: Point2D;
@@ -197,8 +217,8 @@ export abstract class Movable extends Drawable {
     // Mass of Movable
     mass: number;
 
-    private _linkedTo: Drawable[]=[];
-    private _attachedTo: Drawable[]=[];
+    private _linkedTo: Drawing[]=[];
+    private _attachedTo: Drawing[]=[];
 
     constructor(x: number, y: number) {
         super();
@@ -210,15 +230,16 @@ export abstract class Movable extends Drawable {
         this.velocity = this.velocity.add(this.accelleration).limit(this.maxSpeed);
         this.position = this.position.add(this.velocity);
         (!(time%10))&&this.refresh(surface);
+        this.accelleration=new Vector2D(0,0);
     }
 
-    attach(drawable: Drawable|CompositeDrawable, position: number=-1): void {
+    attach(drawable: Drawing|CompositeDrawing, position: number=-1): void {
         if (position==-1)
             this._attachedTo.push(drawable);
         else this._attachedTo.splice(position,0,drawable);
     }
 
-    link(drawable: Drawable|CompositeDrawable, position: number=-1): void {
+    link(drawable: Drawing|CompositeDrawing, position: number=-1): void {
         if (position==-1)
             this._linkedTo.push(drawable);
         else this._linkedTo.splice(position,0,drawable);
@@ -241,11 +262,11 @@ export abstract class Movable extends Drawable {
     }
 
     applyForce(f: Vector2D) {
-        this.accelleration=f;//this.accelleration.add(f);
+        this.accelleration=this.accelleration.add(f);
     }
 }
 
-export class Obstacle extends Drawable {
+export class Obstacle extends Drawing {
 
     position: Point2D;
     // Award granted to player contacting this item.
@@ -280,32 +301,85 @@ export class Obstacle extends Drawable {
     }
 }
 
-export class Ball extends Movable {
+interface Bounds {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}
+interface Rect {
+    getBounds(): Bounds;
+    intersects(obj: Rect | Bounds): boolean;
+    exits(obj: Rect | Bounds): boolean;
+    getIntersection(obj: Rect | Bounds): Bounds;
+}
 
-    size: number;
+export class Ball extends Movable implements Rect {
+
     color: string = "blue";
-    constructor(x: number=0 , y: number=0, size: number=25, mass: number=1) {
+    constructor(x: number=0 , y: number=0, private radius: number=12, mass: number=1) {
         super(x, y);
-        this.position = new Point2D(x,y);
-        this.size=size;
         this.mass=mass;
     }
 
-    tick(time: number=0,surface: RoughCanvas): void {
-        super.tick(time,surface);
-        if (this.position.x+this.size >= surface.canvas.width
-        ||  this.position.y+this.size >= surface.canvas.height
-        ||  this.position.x-this.size <=0 
-        ||  this.position.y-this.size <=0
-        )
-            if (this.velocity.my > 0) this.velocity=this.velocity.mult(-1);
+    setColor(c) {
+        this.color=c;
     }
+    // tick(time: number=0,surface: RoughCanvas): void {
+    //     this.edge(surface.canvas.width,surface.canvas.height);
+    //     return super.tick(time,surface);
+    // }
 
     refresh(surface: RoughCanvas): void {
-        this.drawing = surface.generator.circle(0,0,this.size,{stroke:this.color,fillStyle:'solid',fill:this.color});
+        this.drawing = surface.generator.circle(0,0,this.radius*2,{stroke:this.color,fillStyle:'solid',fill:this.color});
     }
+
+
+    getBounds():Bounds {
+        const p = this.position;
+        return {x1:p.x-this.radius,x2:p.x+this.radius,y1:p.y-this.radius,y2:p.y+this.radius};
+    }
+
+    exits(b: Bounds): boolean {
+        const p = this.getBounds();
+        return (
+            (p.x1<b.x1||p.x2>b.x2)||
+            (p.y1<b.y2||p.y2>b.y1)
+        );
+    }
+
+    intersects(b: Bounds): boolean {
+        const p = this.getBounds();
+        return (
+            (p.x1>b.x2&&p.x2<b.x1||
+            p.x1<b.x2&&p.x2>b.x1)&&
+            (p.y1>b.y2&&p.y2<b.y1||
+            p.y1<b.y2&&p.y2>b.y1)
+        );
+    }
+
+    getIntersection(obj: Rect | Bounds): Bounds {
+        const b = obj.getBounds?obj.getBounds():obj;
+        if (!this.intersects(b))
+            return {
+                x1:0,
+                x2:0,
+                y1:0,
+                y2:0
+            };
+        const p = this.getBounds();
+        const x = [p.x1,p.x2,b.x1,b.x2].sort();
+        const y = [p.y1,p.y2,b.y1,b.y2].sort();
+        return {
+            x1:x[1],
+            x2:x[2],
+            y1:y[1],
+            y2:y[2]
+        };
+    }
+
 }
-export class Player extends Movable  {
+export class Player extends Movable {
 
     private _attractionVector: Vector2D;
     private _friction: number;
@@ -336,7 +410,7 @@ export class Player extends Movable  {
 
 }
 
-export class Axis extends CompositeDrawable {
+export class Axis extends CompositeDrawing {
 
     w: number;
     h: number;
@@ -351,32 +425,96 @@ export class Axis extends CompositeDrawable {
         const centerX = surface.canvas.width/2;
         const centerY = surface.canvas.height/2;
         this.drawings=[
-            surface.generator.line(centerX, centerY, centerX, centerY - this.h),
-            surface.generator.line(centerX, centerY, this.w+centerX, centerY)
+            // Vertical
+            surface.generator.line(centerX, centerY + this.h, centerX, centerY - this.h,{stroke:'white'}),
+            // Horizontal
+            surface.generator.line(centerX - this.w, centerY, this.w+centerX, centerY,{stroke:'white'})
         ]
     }
 }
 
-export class VLine extends CompositeDrawable {
+export class vScreen extends Drawing implements Rect {
 
-    vec: Point2D;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+
+    constructor(private w: number, private h: number) {
+        super();
+    }
+
+    getBounds():Bounds {
+        return {x1:this.x1,x2:this.x2,y1:this.y1,y2:this.y2};
+    }
+
+    notIntersects(b: Bounds): boolean {
+        return (this.x2<b.x1||b.x2<this.x1||this.y2<b.y1||b.y2<this.y1)
+    }
+
+    intersects(b: Bounds): boolean {
+        return (this.x2<b.x1||b.x2<this.x1||this.y2<b.y1||b.y2<this.y1)
+    }
+
+    getIntersection(obj: Rect | Bounds): Bounds {
+        const b = obj.getBounds?obj.getBounds():obj;
+        if (!this.intersects(b))
+            return {
+                x1:0,
+                x2:0,
+                y1:0,
+                y2:0
+            };
+        const x = [this.x1,this.x2,b.x1,b.x2].sort();
+        const y = [this.y1,this.y2,b.y1,b.y2].sort();
+        return {
+            x1:x[1],
+            x2:x[2],
+            y1:y[1],
+            y2:y[2]
+        };
+    }
+
+    refresh(surface) {
+        const centerX = surface.canvas.width/2;
+        const centerY = surface.canvas.height/2;
+        this.x1=centerX-this.w/2;
+        this.y1=centerY-this.h/2;
+        this.x2=this.x1+this.w;
+        this.y2=this.y1+this.h;
+        this.drawing=surface.generator.rectangle(this.x1, this.y1, this.w, this.h, {stroke:'white'});
+    }
+}
+
+export class VLine extends Drawing {
+
+    vec: Vector2D;
+    root: Point2D=new Point2D(0,0);
     txt: string;
 
     constructor(xvec:number, yvec: number, txt: string="") {
         super()
-        this.vec=new Point2D(xvec,yvec);
+        this.vec=new Vector2D(xvec,yvec);
         this.txt=txt;
     }
 
     refresh(surface) {
         this.drawings=[
-            surface.generator.line(0,0,this.vec.x,this.vec.y,{stroke:'white'})
+            surface.generator.line(this.root.x,this.root.y,this.root.x+this.vec.mx,this.root.y+this.vec.my,{stroke:'white'})
         ];
+    }
+
+    setRoot(root: Point2D) {
+        this.root=root;
+    };
+
+    setVec(vec: Vector2D) {
+        this.vec = vec;
     }
 }
 export class Animator {
 
-    sprites: Drawable[];
+    sprites: Drawing[];
     running: boolean=false;
     stepping: number = 1/60; // multiply this times magnitude of vector each frame to get next position.
     frameRate: number = 60;  // expected frame rate
@@ -384,7 +522,7 @@ export class Animator {
 
     private time: number = 0;
 
-    constructor(r: RoughCanvas,sprites: Drawable[]=[]) {
+    constructor(r: RoughCanvas,sprites: Drawing[]=[]) {
         this.surface = r;
         this.sprites = sprites;
     }
@@ -399,10 +537,14 @@ export class Animator {
         this.running = false;
     }
 
+    tick():void { 
+    }
+    
     animate(time):void {
         if (!this.running) return;
         const diff=time-this.time;
         this.time=time;
+        this.tick(time,this.surface);
         this.draw(diff);
         requestAnimationFrame(this.animate.bind(this));
     }
@@ -417,7 +559,7 @@ export class Animator {
         }
     }
 
-    add(sprite: Drawable | Drawable[],position: number=-1): void {
+    add(sprite: Drawing | Drawing[],position: number=-1): void {
         if (position==-1) {
             if (Array.isArray(sprite))
                 this.sprites=this.sprites.concat(sprite);
@@ -430,7 +572,7 @@ export class Animator {
         }
     }
 
-    remove(sprite: Drawable | number):void {
+    remove(sprite: Drawing | number):void {
         if (typeof(sprite)!=='number') {
             sprite=this.sprites.findIndex(n=>n===sprite);
             if (sprite==-1) return;
