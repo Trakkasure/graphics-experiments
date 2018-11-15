@@ -11,9 +11,9 @@ module.exports = {
       'ui': SRC
     // , 'bc': SRC2
     }
-  // , resolve: {
-  //     extensions: ['.js', '.jsx','.ts]
-  //   }
+  , resolve: {
+      extensions: ['.js','.ts']
+    }
   , output: {
       path: DST
     , filename: '[name].js'

@@ -1,6 +1,7 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
-import {Point2D, Vector2D} from "./physics.ts";
-import {Drawing,CompositeDrawing} from "./drawing.ts";
+import {Vector2D} from "./physics";
+import {Point2D} from "./datastructures";
+import {Drawing,CompositeDrawing} from "./drawing";
 
 export abstract class Movable extends Drawing {
     

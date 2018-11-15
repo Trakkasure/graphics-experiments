@@ -9,8 +9,24 @@
 <body>
     <div id="canvas"></div>
 
-    <button id="start">Start</button>
-    <button id="stop">Stop</button>
+    <div>
+        <button id="startBall">Start Ball Animation</button>
+        <button id="stopBall">Stop Ball Animation</button>
+    </div>
+    <div>
+        <button id="startAxis">Start Axis Animation</button>
+        <button id="stopAxis">Stop Axis Animation</button>
+    </div>
+    <div>
+        <button id="startBounds">Start Collision Animation</button>
+        <button id="stopBounds">Stop Collision Animation</button>
+    </div>
+
+    <div>
+        Ball: <input type="radio" name="mode" value="ball" />
+        Axis: <input type="radio" name="mode" value="axis" />
+        Collision<input type="radio" name="mode" value="bounds" />
+    </div>
 </body>
     <script src="ui.js"></script>
 </html>

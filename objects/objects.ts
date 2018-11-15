@@ -1,7 +1,8 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
-import {Point2D, Vector2D, Bounds, Rect} from "./physics.ts";
-import {Drawing,CompositeDrawing} from "./drawing.ts";
-import { Movable } from "./movable.ts";
+import {Vector2D} from "./physics";
+import {Bounds, Rect, Point2D} from "./datastructures";
+import {Drawing,CompositeDrawing} from "./drawing";
+import { Movable } from "./movable";
 
 export class Obstacle extends Drawing {
 
@@ -54,6 +55,15 @@ export class Ball extends Movable implements Rect {
     //     return super.tick(time,surface);
     // }
 
+    /* Returns true if point is within the tree */
+    contains(p: Point2D) {
+        const b = this.getBounds();
+        return (
+            (p.x<=b.x2&&p.x>b.x1)&&
+            (p.y<=b.y2&&p.y>b.y1)
+        );
+    }
+
     refresh(surface: RoughCanvas): void {
         this.drawing = surface.generator.circle(0,0,this.radius*2,{stroke:this.color,fillStyle:'solid',fill:this.color});
     }
@@ -72,13 +82,24 @@ export class Ball extends Movable implements Rect {
         );
     }
 
-    intersects(b: Bounds): boolean {
-        const p = this.getBounds();
+    // intersects(b: Bounds): boolean {
+    //     const p = this.getBounds();
+    //     return (
+    //         (p.x1>b.x2&&p.x2<b.x1||
+    //         p.x1<b.x2&&p.x2>b.x1)&&
+    //         (p.y1>b.y2&&p.y2<b.y1||
+    //         p.y1<b.y2&&p.y2>b.y1)
+    //     );
+    // }
+
+    /* Returns true if all vertexes are within bounds */
+    intersects(obj: Rect | Bounds): boolean {
+        const b = obj.getBounds?obj.getBounds():obj;
         return (
-            (p.x1>b.x2&&p.x2<b.x1||
-            p.x1<b.x2&&p.x2>b.x1)&&
-            (p.y1>b.y2&&p.y2<b.y1||
-            p.y1<b.y2&&p.y2>b.y1)
+            this.contains({x:b.x1,y:b.y1})
+            &&this.contains({x:b.x2,y:b.y1})
+            &&this.contains({x:b.x1,y:b.y2})
+            &&this.contains({x:b.x2,y:b.y2})
         );
     }
 
@@ -105,8 +126,14 @@ export class Ball extends Movable implements Rect {
 }
 export class Player extends Movable {
 
+    // Point that this object is attracted to.
     private _attractionVector: Vector2D;
+    
+    // Friction force that slows movement and angular adjustments.
     private _friction: number;
+
+    // Friction will eventually take over this value
+    private _turnLimit: number=3;
 
     constructor(x: number=0,y: number=0) {
         super(x,y);
@@ -117,21 +144,23 @@ export class Player extends Movable {
     }
 
     tick(time,surface) {
-        this.accelleration=this._attractionVector.sub(this.position).limit(5);
+        this.accelleration=this._attractionVector.sub(this.position).limit(this._turnLimit);
         super.tick(time,surface);
     }
 
+    // Directly change angle.
+    setAngle(degrees: number) {
+        this.velocity=new Vector2D({angle:degrees*Math.PI/180,magnitude:this.velocity.magnitude});
+    }
+
+    // Gradually attract to a point 
     attractToPoint(p: Point2D) {
         this._attractionVector = new Vector2D(p.x,p.y);
     }
+
     refresh(surface) {
         this.drawing=surface.generator.path('L -32 8 L -32 -8Z',{stroke: "white"});
     }
-
-    // setAngle(a: number) {
-    //     this.velocity=new Vector2D({angle:a*(Math.PI/180), magnitude: this.velocity.magnitude});
-    // }
-
 }
 
 export class Axis extends CompositeDrawing {
@@ -215,6 +244,7 @@ export class VLine extends Drawing {
     vec: Vector2D;
     root: Point2D=new Point2D(0,0);
     txt: string;
+    color: string="white";
 
     constructor(xvec:number, yvec: number, txt: string="") {
         super()
@@ -222,10 +252,13 @@ export class VLine extends Drawing {
         this.txt=txt;
     }
 
+    setColor(color:string) {
+        this.color=color;
+    }
     refresh(surface) {
-        this.drawings=[
-            surface.generator.line(this.root.x,this.root.y,this.root.x+this.vec.mx,this.root.y+this.vec.my,{stroke:'white'})
-        ];
+        this.drawing=
+            surface.generator.line(this.root.x,this.root.y,this.root.x+this.vec.mx,this.root.y+this.vec.my,{stroke:this.color})
+        ;
     }
 
     setRoot(root: Point2D) {

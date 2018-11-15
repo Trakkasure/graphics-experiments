@@ -1,29 +1,4 @@
-export class Point2D {
-    // Point
-    readonly x: number;
-    readonly y: number;
-
-    constructor(x: number, y: number) {
-        this.x=x;
-        this.y=y
-    }
-
-    add(v: Vector2D) {
-        return new Point2D(v.mx+this.x,v.my+this.y);
-    }
-}
-export interface Bounds {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-}
-export interface Rect {
-    getBounds(): Bounds;
-    intersects(obj: Rect | Bounds): boolean;
-    exits(obj: Rect | Bounds): boolean;
-    getIntersection(obj: Rect | Bounds): Bounds;
-}
+import { Point2D } from "./datastructures";
 
 export class Vector2D {
     // Using magnitude per-axis method for vectors.

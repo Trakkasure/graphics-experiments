@@ -1,7 +1,7 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Drawable } from "roughjs/bin/core";
 
-import {Point2D} from "./physics.ts";
+import {Point2D} from "./datastructures";
 
 export abstract class Drawing {
 
