@@ -1,5 +1,5 @@
 import rough from 'roughjs';
-import {Borders, Ball, Food, Poison, Player, Animator, Axis, VLine, vScreen, Vector2D, Point2D} from './objects.ts';
+import {Borders, Ball, Food, Poison, Player, Animator, Axis, VLine, vScreen, Vector2D, Point2D} from './objects/objects.ts';
 import {random} from './utils.ts';
 import { Obstacle } from './objects';
 import { RoughCanvas } from 'roughjs/bin/canvas';
@@ -42,7 +42,7 @@ const rc = rough
 window.rc=rc;
 const foodCount = 10;
 const poisonCount = 10;
-const playerCount = 1;
+const playerCount = 2;
 
 const obstacles = new Array<Obstacle>(foodCount+poisonCount);
 const players = new Array<Player>(playerCount);
@@ -72,7 +72,6 @@ rc.canvas.addEventListener("mousemove",function(e) {
     // const mouse=new Point2D(e.clientX-offsetX,e.clientY-offsetY);
     // ball.position=new Point2D(e.clientX-offsetX,e.clientY-offsetY);
     // ball.setColor(ball.intersects(tube.getBounds())?'#FF5555':'white');
-    // refresh();
 });
 
 rc.canvas.addEventListener("click",function(e) {
@@ -100,15 +99,16 @@ ani.tick=(time,surface)=> {
     players.forEach(p=>{
         p.attractToPoint(ball.position);
     });
+    refresh();
     if (ball.exits(tube)) {
         const bb=ball.getBounds();
         const tb=tube.getBounds();
         let vec = ball.velocity;
         if (bb.x2>tb.x2) { // At right
-            vec=new Vector2D({angle:1*Math.PI-vec.angle,magnitude:vec.magnitude});
+            vec=new Vector2D({angle:Math.PI-vec.angle,magnitude:vec.magnitude});
         } else
         if (bb.x1<tb.x1) { // At left
-            vec=new Vector2D({angle:1*Math.PI-vec.angle,magnitude:vec.magnitude});
+            vec=new Vector2D({angle:Math.PI-vec.angle,magnitude:vec.magnitude});
         } else
         if (bb.y1<tb.y1) { // At top
             vec=new Vector2D({angle:2*Math.PI-vec.angle,magnitude:vec.magnitude});
