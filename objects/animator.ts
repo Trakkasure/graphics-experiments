@@ -1,7 +1,7 @@
 
 import { RoughCanvas } from "roughjs/bin/canvas";
 import {Drawing} from "./drawing.ts";
-import { Movable } from "./movable";
+import { Movable } from "./movable.ts";
 
 export class Animator {
 

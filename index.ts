@@ -1,8 +1,9 @@
 import rough from 'roughjs';
-import {Borders, Ball, Food, Poison, Player, Animator, Axis, VLine, vScreen, Vector2D, Point2D} from './objects/objects.ts';
+import {Ball, Food, Poison, Player, VLine, vScreen} from './objects/objects.ts';
+import {Animator} from './objects/animator.ts';
+import {Vector2D, Point2D} from './objects/physics.ts';
 import {random} from './utils.ts';
-import { Obstacle } from './objects';
-import { RoughCanvas } from 'roughjs/bin/canvas';
+import {Obstacle} from './objects/object.ts';
 
 // attrbutes set on canvas element
 const canvasContainerSelector = "#canvas";
