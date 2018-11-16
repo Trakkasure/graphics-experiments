@@ -1,4 +1,5 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
+import { RoughCanvasAsync } from "roughjs/bin/canvas-async";
 import { Drawable } from "roughjs/bin/core";
 
 import {Point2D} from "./datastructures";
@@ -12,13 +13,13 @@ export abstract class Drawing {
     /** 
      * Re-create the Drawing object.
      */
-    abstract refresh(surface: RoughCanvas): void;
+    abstract refresh(surface: RoughCanvas|RoughCanvasAsync): void;
 
     /**
      * Default function for draw.
      * Most extenders should call this (as super)
      */ 
-    draw(surface: RoughCanvas): void {
+    draw(surface: RoughCanvas|RoughCanvasAsync): void {
         !this.drawing&&this.refresh(surface);
         surface.ctx.save();
         surface.ctx.translate(this.offset.x,this.offset.y);
@@ -32,7 +33,7 @@ export abstract class CompositeDrawing extends Drawing {
     drawings: Drawing[]=null;
 
     set drawing(d) {this.drawings=[d];}
-    draw(surface: RoughCanvas): void {
+    draw(surface: RoughCanvas|RoughCanvasAsync): void {
         !this.drawings&&this.refresh(surface);
         this.drawings.forEach(surface.draw.bind(surface));
     }

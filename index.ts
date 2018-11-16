@@ -1,7 +1,7 @@
 import rough from 'roughjs';
 import {Ball, Food, Poison, Obstacle, Player, VLine, vScreen, Axis} from './objects/objects';
 import {Animator} from './objects/animator';
-import {Point2D} from './objects/datastructures';
+import {Point2D, QuadTree, Bounds} from './objects/datastructures';
 import {Vector2D} from './objects/physics';
 import {random} from './utils';
 
@@ -34,13 +34,11 @@ function createStyles() {
 }
 
 createStyles();
-
-const rc = rough
-    .canvas(document.querySelector(canvasContainerSelector)
-        .appendChild(Object.keys(canvasAttributes)
-            .reduce((c,k)=>{c.setAttribute(k,canvasAttributes[k]);return c},document.createElement('canvas'))
-        )
-    );
+const canvas: HTMLCanvasElement = document.querySelector(canvasContainerSelector)
+                                        .appendChild(Object.keys(canvasAttributes)
+                                            .reduce((c,k)=>{c.setAttribute(k,canvasAttributes[k]);return c},document.createElement('canvas'))
+                                    );
+const rc = rough.canvas(canvas);
 
 const foodCount = 10;
 const poisonCount = 10;
@@ -67,13 +65,14 @@ const pline2 = new VLine(40,0);
 pline2.setColor('#FF5555');
 
 
-const canvasBounds=rc.canvas.getBoundingClientRect();
+const canvasBounds=canvas.getBoundingClientRect();
 let offsetX=canvasBounds.x;
 let offsetY=canvasBounds.y;
 
 const ballAnimator=new Animator(rc);
 const boundsAnimator=new Animator(rc);
 const axisAnimator=new Animator(rc);
+const quadTreeAnimator=new Animator(rc);
 
 const ball = new Ball(350,350);
 const tube = new vScreen(400,400);
@@ -82,13 +81,13 @@ ball.velocity=new Vector2D(0,0);
 ball.maxSpeed=10;
 
 let mouse=new Point2D(0,0);
-rc.canvas.addEventListener("mousemove",function(e) {
+canvas.addEventListener("mousemove",function(e) {
     // Set position of the mouse..
     mouse=new Point2D(e.clientX-offsetX,e.clientY-offsetY);
 });
 
 // Apply a force to the moving ball..
-rc.canvas.addEventListener("click",function(e) {
+canvas.addEventListener("click",function(e) {
     // players[0].applyForce(players[0].velocity.scale(-1));
         // console.log(vec);
     ball.applyForce(new Vector2D(0.3,0.1));
@@ -134,13 +133,13 @@ const line2 = new VLine(0,0);
 const line3 = new VLine(0,0);
 
 // Set root of line (anchor point of vector)
-line.setRoot(new Point2D(rc.canvas.width/2,rc.canvas.height/2));
-line2.setRoot(new Point2D(rc.canvas.width/2,rc.canvas.height/2));
+line.setRoot(new Point2D(canvas.width/2,canvas.height/2));
+line2.setRoot(new Point2D(canvas.width/2,canvas.height/2));
 // Bounce off y axis
 line2.setColor('#FF5555');
 // Bounce off x axis
 line3.setColor('#55FF55');
-line3.setRoot(new Point2D(rc.canvas.width/2,rc.canvas.height/2));
+line3.setRoot(new Point2D(canvas.width/2,canvas.height/2));
 axisAnimator.add(line);
 axisAnimator.add(line2);
 axisAnimator.add(line3);
@@ -181,7 +180,7 @@ ballAnimator.tick=(time,surface)=> {
 
 axisAnimator.tick=(time,surface) => {
     refresh();
-    let vec=new Vector2D((mouse.x-rc.canvas.width/2),(mouse.y-rc.canvas.height/2));
+    let vec=new Vector2D((mouse.x-canvas.width/2),(mouse.y-canvas.height/2));
     if (vec.my==0) return;
     console.log("Angle: %s",vec.angle*(180/Math.PI))
     line.setVec(vec)
@@ -211,9 +210,18 @@ boundsAnimator.tick=(time,surface) => {
     // console.log(b.x1,b.y1,b.x2-b.x1,b.y2-b.y1)
 }
 
+const qt=new QuadTree(<Bounds>{x1:0,y1:0,x2:canvas.width,y2:canvas.height},5);
+for (let i=0;i<1000;i++) {
+    const ball=new Ball(random(0,canvas.width),random(0,canvas.height),10);
+    qt.add(ball.position,ball);
+}
+const bounds=new vScreen()
+quadTreeAnimator.tick=(time,surface) => {
+
+}
 function refresh() {
     // Clear the canvas
-    rc.ctx.clearRect(0,0,rc.canvas.width,rc.canvas.height);
+    rc.ctx.clearRect(0,0,canvas.width,canvas.height);
 
 }
 

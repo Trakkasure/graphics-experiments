@@ -21,6 +21,9 @@ export interface Bounds {
     x2: number;
     y2: number;
 }
+export function isRect(obj: Rect | object): obj is Rect {
+    return !!(<Rect>obj).getBounds;
+}
 export interface Rect {
     getBounds(): Bounds;
     intersects(obj: Rect | Bounds): boolean;
@@ -31,12 +34,9 @@ export interface Rect {
 
 export class QuadTree implements Rect {
     
-    points: Array<Point2D>=[];
+    points: Array<[Point2D,any]>=[];
     divided: boolean=false;
-    nw: QuadTree;
-    ne: QuadTree;
-    sw: QuadTree;
-    se: QuadTree;
+    children: Array<QuadTree>=[];
 
     constructor(private bounds: Bounds, private capacity: number) {
 
@@ -52,13 +52,13 @@ export class QuadTree implements Rect {
     }
 
     /* Returns true if any vertex is within bounds */
-    intersects(obj: Rect | Bounds): boolean {
-        const b = obj.getBounds?obj.getBounds():obj;
+    intersects(obj: Bounds | Rect): boolean {
+        const b = isRect(obj)?obj.getBounds():obj;
         return (
-            this.contains({x:b.x1,y:b.y1})
-          ||this.contains({x:b.x2,y:b.y1})
-          ||this.contains({x:b.x1,y:b.y2})
-          ||this.contains({x:b.x2,y:b.y2})
+            this.contains(<Point2D>{x:b.x1,y:b.y1})
+          ||this.contains(<Point2D>{x:b.x2,y:b.y1})
+          ||this.contains(<Point2D>{x:b.x1,y:b.y2})
+          ||this.contains(<Point2D>{x:b.x2,y:b.y2})
         );
     }
 
@@ -67,7 +67,7 @@ export class QuadTree implements Rect {
     }
     
     getIntersection(obj: Rect| Bounds) {
-        const b = obj.getBounds?obj.getBounds():obj;
+        const b = isRect(obj)?obj.getBounds():obj;
         if (!this.intersects(b))
             return {
                 x1:0,
@@ -86,41 +86,50 @@ export class QuadTree implements Rect {
         };
     }
 
-    insert(p: Point2D):void {
+    insert(p: Point2D, userData:any):void {
         if (!this.contains(p)) return;
-        if (this.divided||this.points.length>this.capacity) {
-            if (this.points.length) {
-                this.points.forEach(pt=>{
-                    // only top
-                    if (p.y<this.bounds.y2-(this.bounds.y2-this.bounds.y1)/2) {
-                        this.nw.insert(pt);
-                        this.ne.insert(pt);
-                    } else {
-                        this.sw.insert(pt);
-                        this.se.insert(pt);
-                    }
-                })
-                this.points=[];
-                this.nw.insert(p);
-                this.ne.insert(p);
-                this.sw.insert(p);
-                this.se.insert(p);
-            }
-            this.points.push(p);
+        if (this.points.length>=this.capacity) {
+            this.divide();
+            this.points.forEach((pts:[Point2D,any])=>{
+                // only top
+                const [pt,userData]=pts;
+                if (p.y<this.bounds.y2-(this.bounds.y2-this.bounds.y1)/2) {
+                    this.children[0].insert(pt,userData);
+                    this.children[1].insert(pt,userData);
+                } else {
+                    this.children[2].insert(pt,userData);
+                    this.children[3].insert(pt,userData);
+                }
+            })
+            this.points=[];
         }
+        if (this.divided) {
+            this.children[0].insert(p,userData);
+            this.children[1].insert(p,userData);
+            this.children[2].insert(p,userData);
+            this.children[3].insert(p,userData);
+        } else
+            this.points.push([p,userData]);
     }
 
     divide():void {
         this.divided=true;
         const center = new Point2D(this.bounds.x2-(this.bounds.x2-this.bounds.x1)/2,this.bounds.y2-(this.bounds.y2-this.bounds.y1)/2)
-        this.nw = new QuadTree({x1:this.bounds.x1,y1:this.bounds.y1,x2:center.x,y2:center.y},this.capacity);
-        this.ne = new QuadTree({x1:center.x,y1:this.bounds.y1,x2:this.bounds.x2,y2:center.y},this.capacity);
-        this.sw = new QuadTree({x1:this.bounds.x1,y1:center.y,x2:center.x,y2:this.bounds.y2},this.capacity);
-        this.se = new QuadTree({x1:center.x,y1:center.y,x2:this.bounds.x2,y2:this.bounds.y2},this.capacity);
+        this.children[0] = new QuadTree({x1:this.bounds.x1,y1:this.bounds.y1,x2:center.x,y2:center.y},this.capacity);
+        this.children[1] = new QuadTree({x1:center.x,y1:this.bounds.y1,x2:this.bounds.x2,y2:center.y},this.capacity);
+        this.children[2] = new QuadTree({x1:this.bounds.x1,y1:center.y,x2:center.x,y2:this.bounds.y2},this.capacity);
+        this.children[3] = new QuadTree({x1:center.x,y1:center.y,x2:this.bounds.x2,y2:this.bounds.y2},this.capacity);
     }
 
     getBounds():Bounds {
         return this.bounds;
     }
 
+    find(range: Rect) {
+        if (!this.intersects(range)) return [];
+        if (this.divided) {
+            return this.children.reduce((a: Array<Point2D>, c:QuadTree)=>a.concat(c.find(range)),[]);
+        }
+        return this.points.filter(p=>range.contains(p[0]));
+    }
 }

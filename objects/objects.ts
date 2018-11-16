@@ -1,6 +1,7 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
+import { RoughCanvasAsync } from "roughjs/bin/canvas-async";
 import {Vector2D} from "./physics";
-import {Bounds, Rect, Point2D} from "./datastructures";
+import {Bounds, Rect, Point2D, isRect} from "./datastructures";
 import {Drawing,CompositeDrawing} from "./drawing";
 import { Movable } from "./movable";
 
@@ -22,7 +23,7 @@ export class Obstacle extends Drawing {
         this.scale=scale;
     }
 
-    refresh(surface: RoughCanvas,color: string="red") {
+    refresh(surface: RoughCanvas|RoughCanvasAsync,color: string="red") {
         this.drawing=surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
     }
 
@@ -94,17 +95,17 @@ export class Ball extends Movable implements Rect {
 
     /* Returns true if all vertexes are within bounds */
     intersects(obj: Rect | Bounds): boolean {
-        const b = obj.getBounds?obj.getBounds():obj;
+        const b = isRect(obj)?obj.getBounds():obj;
         return (
-            this.contains({x:b.x1,y:b.y1})
-            &&this.contains({x:b.x2,y:b.y1})
-            &&this.contains({x:b.x1,y:b.y2})
-            &&this.contains({x:b.x2,y:b.y2})
+            this.contains(<Point2D>{x:b.x1,y:b.y1})
+            &&this.contains(<Point2D>{x:b.x2,y:b.y1})
+            &&this.contains(<Point2D>{x:b.x1,y:b.y2})
+            &&this.contains(<Point2D>{x:b.x2,y:b.y2})
         );
     }
 
     getIntersection(obj: Rect | Bounds): Bounds {
-        const b = obj.getBounds?obj.getBounds():obj;
+        const b = isRect(obj)?obj.getBounds():obj;
         if (!this.intersects(b))
             return {
                 x1:0,
@@ -186,14 +187,10 @@ export class Axis extends CompositeDrawing {
     }
 }
 
-export class vScreen extends Drawing implements Rect {
+export class Box extends Drawing implements Rect {
 
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-
-    constructor(private w: number, private h: number) {
+    color: string="white";
+    constructor(protected x1:number,protected y1:number,protected x2:number,protected y2:number) {
         super();
     }
 
@@ -209,8 +206,17 @@ export class vScreen extends Drawing implements Rect {
         return (this.x2<b.x1||b.x2<this.x1||this.y2<b.y1||b.y2<this.y1)
     }
 
+    /* Returns true if point is within the tree */
+    contains(p: Point2D) {
+        const b = this.getBounds();
+        return (
+            (p.x<=b.x2&&p.x>b.x1)&&
+            (p.y<=b.y2&&p.y>b.y1)
+        );
+    }
+
     getIntersection(obj: Rect | Bounds): Bounds {
-        const b = obj.getBounds?obj.getBounds():obj;
+        const b = isRect(obj)?obj.getBounds():obj;
         if (!this.intersects(b))
             return {
                 x1:0,
@@ -228,6 +234,31 @@ export class vScreen extends Drawing implements Rect {
         };
     }
 
+    exits(b: Bounds): boolean {
+        const p = this.getBounds();
+        return (
+            (p.x1<b.x1||p.x2>b.x2)||
+            (p.y1<b.y2||p.y2>b.y1)
+        );
+    }
+
+    setColor(color: string):void {
+        this.color=color;
+    }
+
+    refresh(surface) {
+        const w=this.x2-this.x1;
+        const h=this.y2-this.y1;
+        this.drawing=surface.generator.rectangle(this.x1, this.y1, w, h, {stroke:this.color});
+    }
+}
+
+export class vScreen extends Box implements Rect {
+
+    constructor(private w: number, private h: number) {
+        super(0,0,0,0);
+    }
+
     refresh(surface) {
         const centerX = surface.canvas.width/2;
         const centerY = surface.canvas.height/2;
@@ -235,7 +266,7 @@ export class vScreen extends Drawing implements Rect {
         this.y1=centerY-this.h/2;
         this.x2=this.x1+this.w;
         this.y2=this.y1+this.h;
-        this.drawing=surface.generator.rectangle(this.x1, this.y1, this.w, this.h, {stroke:'white'});
+        this.drawing=surface.generator.rectangle(this.x1, this.y1, this.w, this.h, {stroke:this.color});
     }
 }
 
