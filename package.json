@@ -22,7 +22,6 @@
     "@babel/preset-typescript": "^7.1.0",
     "babel-loader": "^8.0.4",
     "express": "^4.16.4",
-    "regenerator-runtime": "^0.13.1",
     "serv": "^0.2.4",
     "webpack": "^4.22.0",
     "webpack-cli": "^3.1.2"
