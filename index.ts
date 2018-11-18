@@ -1,29 +1,50 @@
 import rough from 'roughjs';
-import {Ball, Food, Poison, Obstacle, Player, VLine, vScreen, Axis} from './objects/objects';
-import {Animator} from './objects/animator';
-import {Point2D, QuadTree, Bounds} from './objects/datastructures';
-import {Vector2D} from './objects/physics';
-import {random} from './utils';
-
+import { Ball, Food, Poison, Obstacle, Player, VLine, vScreen, Axis, Box } from './objects/objects';
+import { Animator } from './objects/animator';
+import { Point2D, QuadTree, Bounds } from './objects/datastructures';
+import { Vector2D } from './objects/physics';
+import { random } from './utils';
+import "@babel/polyfill";
 
 // attrbutes set on canvas element
 const canvasContainerSelector = "#canvas";
+const backgroundCanvasContainerSelector = "#backgroundCanvas";
 const canvasAttributes = {
     width: 800,
     height: 600,
     id: "drawingSurface"
 };
 
+const backgroundCanvasAttributes = {
+    width: 800,
+    height: 600,
+    id: "backgroundSurface"
+};
+
 function createStyles() {
     let el=document.createElement('style');
     el.setAttribute('type','text/css');
     el.setAttribute('id','styles');
-    const text=document.createTextNode(`
+    const text=
+    document.createTextNode(`
         ${canvasContainerSelector} {
             margin: 0;
             padding: 0;
         }
         ${canvasContainerSelector} canvas {
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            top:8px;
+            left:8px;
+            position: absolute;
+        }
+
+        ${backgroundCanvasContainerSelector} {
+            margin: 0;
+            padding: 0;
+        }
+        ${backgroundCanvasContainerSelector} canvas {
             background: black;
             margin: 0;
             padding: 0;
@@ -38,7 +59,12 @@ const canvas: HTMLCanvasElement = document.querySelector(canvasContainerSelector
                                         .appendChild(Object.keys(canvasAttributes)
                                             .reduce((c,k)=>{c.setAttribute(k,canvasAttributes[k]);return c},document.createElement('canvas'))
                                     );
+const backgroundCanvas: HTMLCanvasElement = document.querySelector(backgroundCanvasContainerSelector)
+                                        .appendChild(Object.keys(backgroundCanvasAttributes)
+                                            .reduce((c,k)=>{c.setAttribute(k,backgroundCanvasAttributes[k]);return c},document.createElement('canvas'))
+                                    );
 const rc = rough.canvas(canvas);
+const rcBg = rough.canvas(backgroundCanvas);
 
 const foodCount = 10;
 const poisonCount = 10;
@@ -73,6 +99,10 @@ const ballAnimator=new Animator(rc);
 const boundsAnimator=new Animator(rc);
 const axisAnimator=new Animator(rc);
 const quadTreeAnimator=new Animator(rc);
+
+boundsAnimator.clearFrames(false);
+quadTreeAnimator.clearFrames(false);
+
 
 const ball = new Ball(350,350);
 const tube = new vScreen(400,400);
@@ -117,7 +147,30 @@ document.getElementById('stopBounds').addEventListener('click',()=>{
     boundsAnimator.stop();
 });
 
+// Start/stop animation.
+document.getElementById('startTree').addEventListener('click',()=>{
+    quadTreeAnimator.start();
+});
+document.getElementById('stopTree').addEventListener('click',()=>{
+    quadTreeAnimator.stop();
+});
 
+document.getElementById('startTree').addEventListener('click',()=>{
+    quadTreeAnimator.start();
+});
+
+document.getElementById('showHideTree').addEventListener('click',(e) => {
+    clear(rcBg);
+    for (var i=0;i<balls.length;i++) balls[i].draw(rcBg);
+    if (e.target.checked) {
+        // Draw tree boundaries
+        // Box.fromBounds(qt.getBounds()).draw(rc);
+        for (let tree of qt.walkTrees()) {
+            Box.fromBounds(tree.getBounds()).draw(rcBg);
+        }
+    } else {
+    }
+})
 // Add stuff to ball animator...
 
 ballAnimator.add(ball);
@@ -155,7 +208,7 @@ ballAnimator.tick=(time,surface)=> {
     });
 
     // Clear the canvas
-    refresh();
+    clear();
 
     // If the ball is exiting the tube...
     if (ball.exits(tube)) {
@@ -179,7 +232,6 @@ ballAnimator.tick=(time,surface)=> {
 }
 
 axisAnimator.tick=(time,surface) => {
-    refresh();
     let vec=new Vector2D((mouse.x-canvas.width/2),(mouse.y-canvas.height/2));
     if (vec.my==0) return;
     console.log("Angle: %s",vec.angle*(180/Math.PI))
@@ -198,7 +250,7 @@ axisAnimator.tick=(time,surface) => {
 let demoMode="";
 
 boundsAnimator.tick=(time,surface) => {
-    refresh();
+    clear();
     ball2.position=mouse;
     ball2.setColor(ball2.intersects(tube.getBounds())?'#FF5555':'white');
     // This maually draws bounding rects around the ball that will be drawn by the ball.
@@ -211,20 +263,49 @@ boundsAnimator.tick=(time,surface) => {
 }
 
 const qt=new QuadTree(<Bounds>{x1:0,y1:0,x2:canvas.width,y2:canvas.height},5);
+const balls: Array<Ball>=[];
 for (let i=0;i<1000;i++) {
-    const ball=new Ball(random(0,canvas.width),random(0,canvas.height),10);
-    qt.add(ball.position,ball);
+    const ball=new Ball(random(1,canvas.width-1),random(1,canvas.height-1),2);
+    ball.setColor('#9999FF');
+    balls.push(ball);
+    qt.insert(ball.position,ball);
 }
-const bounds=new vScreen()
+let rx=<HTMLInputElement>document.querySelector('[name="x"]')
+let ry=<HTMLInputElement>document.querySelector('[name="y"]')
+
 quadTreeAnimator.tick=(time,surface) => {
-
+    clear(rc);
+    // Draw all points every tick.
+    // This is very slow. Need to find faster way to walk all points that is just as convenient.
+    let x=0;
+    let mode=<HTMLInputElement>document.querySelector('[name="mode"]:checked');
+    if (mode.value=="range") {
+        // Create and draw our box that will be "find what's inside"
+        let box=new Box(mouse.x-(rx.value/2),mouse.y-(ry.value/2),mouse.x+(rx.value/2),mouse.y+(ry.value/2));
+        // Make it red
+        box.setColor('red');
+        // Draw ut.
+        box.draw(rc);
+        // Find all points within the box. Box implements Rect. find takes a Rect.
+        // Then, loop through each of them, setting color to litght green, refreshing the drawing, drawing, and resetting back.
+        qt.find(box).forEach(p=>p[1].setColor('#99FF99')||p[1].refresh(rc)||p[1].draw(rc)||p[1].setColor("#9999FF")||p[1].refresh(rc));
+    } else {
+        const tree=qt.findTreeFromPoint(mouse);
+        if (tree) {
+            tree.getPoints().forEach(p=>p[1].setColor('#99FF99')||p[1].refresh(rc)||p[1].draw(rc)||p[1].setColor("#9999FF")||p[1].refresh(rc));
+        }
+    }
 }
-function refresh() {
+
+
+// Draw balls.
+for (var i=0;i<balls.length;i++) balls[i].draw(rcBg);
+
+function clear(c=rc) {
     // Clear the canvas
-    rc.ctx.clearRect(0,0,canvas.width,canvas.height);
+    c.ctx.clearRect(0,0,canvas.width,canvas.height);
 
 }
-
 // Demo attachments. No need to add to animator. Attached items render with object attached to.
 players[0].link(pline);
 players[1].attach(pline2);
