@@ -1,6 +1,6 @@
 
 import { RoughCanvas } from "roughjs/bin/canvas";
-import {Drawing} from "./drawing";
+import { Drawing } from "./drawing";
 import { Movable } from "./movable";
 
 export class Animator {
@@ -10,12 +10,17 @@ export class Animator {
     stepping: number = 1/60; // multiply this times magnitude of vector each frame to get next position.
     frameRate: number = 60;  // expected frame rate
     surface: RoughCanvas;
+    clearFrame: boolean=true;
 
     private time: number = 0;
 
     constructor(r: RoughCanvas,sprites: Drawing[]=[]) {
         this.surface = r;
         this.sprites = sprites;
+    }
+
+    clearFrames(b:boolean):void {
+        this.clearFrame=b;
     }
 
     start():void {
@@ -40,8 +45,8 @@ export class Animator {
         requestAnimationFrame(this.animate.bind(this));
     }
 
-    draw(time: number = 0, clear: boolean=true):void {
-        if (clear) this.surface.ctx.clearRect(0,0,this.surface.canvas.width,this.surface.canvas.height);
+    draw(time: number = 0):void {
+        if (this.clearFrame) this.surface.ctx.clearRect(0,0,this.surface.canvas.width,this.surface.canvas.height);
         for (let sprite of this.sprites) {
             if (sprite instanceof Movable) {
                 sprite.tick(time,this.surface);
