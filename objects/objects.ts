@@ -1,8 +1,9 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { RoughCanvasAsync } from "roughjs/bin/canvas-async";
-import {Vector2D} from "./physics";
-import {Bounds, Rect, Point2D, isRect} from "./datastructures";
-import {Drawing,CompositeDrawing} from "./drawing";
+import { Drawable } from "roughjs/bin/core";
+import { Vector2D } from "./physics";
+import { Bounds, Rect, Point2D, isRect } from "./datastructures";
+import { Drawing,CompositeDrawing } from "./drawing";
 import { Movable } from "./movable";
 
 export class Obstacle extends Drawing {
@@ -24,7 +25,7 @@ export class Obstacle extends Drawing {
     }
 
     refresh(surface: RoughCanvas|RoughCanvasAsync,color: string="red") {
-        this.drawing=surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
+        this.drawing=<Drawable>surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
     }
 
     moveTo(x: number,y: number) {
@@ -125,6 +126,7 @@ export class Ball extends Movable implements Rect {
     }
 
 }
+
 export class Player extends Movable {
 
     // Point that this object is attracted to.
@@ -190,6 +192,9 @@ export class Axis extends CompositeDrawing {
 export class Box extends Drawing implements Rect {
 
     color: string="white";
+    static fromBounds(b:Bounds):Box {
+        return new Box(b.x1,b.y1,b.x2,b.y2);
+    }
     constructor(protected x1:number,protected y1:number,protected x2:number,protected y2:number) {
         super();
     }
