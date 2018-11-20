@@ -33,14 +33,14 @@ export class Animator {
         this.running = false;
     }
 
-    tick():void { 
+    tick(time: number,surface: RoughCanvas):void { 
     }
     
     animate(time):void {
         if (!this.running) return;
         const diff=time-this.time;
         this.time=time;
-        this.tick(time,this.surface);
+        this.tick.call(this,time,this.surface);
         this.draw(diff);
         requestAnimationFrame(this.animate.bind(this));
     }
