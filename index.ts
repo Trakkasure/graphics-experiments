@@ -169,9 +169,30 @@ document.getElementById('showHideTree').addEventListener('click',(e) => {
             Box.fromBounds(tree.getBounds()).draw(rcBg);
         }
     } else {
+        quadTreeAnimator.remove(mouseBox);
     }
-})
+});
+let mode="range";
+document.querySelectorAll('[name="mode"]').forEach(radio=>radio.addEventListener('click',(e) => {
+    if (e.target.value==mode) return;
+    mode=e.target.value
+    if (e.target.value=='range') {
+        quadTreeAnimator.add(mouseBox);
+    } else
+    if (e.target.value=='point') {
+        quadTreeAnimator.remove(mouseBox);
+    }
+}));
 // Add stuff to ball animator...
+
+let rx=<HTMLInputElement>document.querySelector('[name="rx"]')
+let ry=<HTMLInputElement>document.querySelector('[name="ry"]')
+rx.addEventListener('input',adjustMouseBoxSize);
+ry.addEventListener('input',adjustMouseBoxSize);
+function adjustMouseBoxSize(e) {
+    mouseBox.offset=new Point2D(-rx.value/2, -ry.value/2);
+    mouseBox.setSize(rx.value,ry.value);
+}
 
 ballAnimator.add(ball);
 ballAnimator.add(players);
@@ -204,7 +225,7 @@ boundsAnimator.add(ball2);
 ballAnimator.tick=(time,surface)=> {
     // Players that will follow the ball. Adjust follow point to the new position of the ball.
     players.forEach(p=>{
-        p.attractToPoint(ball.position);
+        p.attractToPoint(ball.getPosition());
     });
 
     // Clear the canvas
@@ -251,12 +272,12 @@ let demoMode="";
 
 boundsAnimator.tick=(time,surface) => {
     clear();
-    ball2.position=mouse;
+    ball2.moveTo(mouse.x,mouse.y);
     ball2.setColor(ball2.intersects(tube.getBounds())?'#FF5555':'white');
     // This maually draws bounding rects around the ball that will be drawn by the ball.
     const b=ball2.getBounds();
     // const p=tube.getBounds();
-    ball2.refresh(surface);
+    // ball2.refresh(surface);
     surface.rectangle(b.x1,b.y1,b.x2-b.x1,b.y2-b.y1,{stroke:'#FF5555'});
     // surface.rectangle(p.x1,p.y1,p.x2-p.x1,p.y2-p.y1,{stroke:'#55FF55'});
     // console.log(b.x1,b.y1,b.x2-b.x1,b.y2-b.y1)
@@ -268,11 +289,11 @@ for (let i=0;i<1000;i++) {
     const ball=new Ball(random(1,canvas.width-1),random(1,canvas.height-1),2);
     ball.setColor('#9999FF');
     balls.push(ball);
-    qt.insert(ball.position,ball);
+    qt.insert(ball.getPosition(),ball);
 }
-let rx=<HTMLInputElement>document.querySelector('[name="x"]')
-let ry=<HTMLInputElement>document.querySelector('[name="y"]')
 
+let mouseBox=new Box(0,0,rx.value,ry.value);
+mouseBox.setColor('red');
 quadTreeAnimator.tick=(time,surface) => {
     clear(rc);
     // Draw all points every tick.
@@ -281,14 +302,11 @@ quadTreeAnimator.tick=(time,surface) => {
     let mode=<HTMLInputElement>document.querySelector('[name="mode"]:checked');
     if (mode.value=="range") {
         // Create and draw our box that will be "find what's inside"
-        let box=new Box(mouse.x-(rx.value/2),mouse.y-(ry.value/2),mouse.x+(rx.value/2),mouse.y+(ry.value/2));
         // Make it red
-        box.setColor('red');
-        // Draw ut.
-        box.draw(rc);
+        mouseBox.moveTo(mouse.x,mouse.y);
         // Find all points within the box. Box implements Rect. find takes a Rect.
         // Then, loop through each of them, setting color to litght green, refreshing the drawing, drawing, and resetting back.
-        qt.find(box).forEach(p=>p[1].setColor('#99FF99')||p[1].refresh(rc)||p[1].draw(rc)||p[1].setColor("#9999FF")||p[1].refresh(rc));
+        qt.find(mouseBox).forEach(p=>p[1].setColor('#99FF99')||p[1].refresh(rc)||p[1].draw(rc)||p[1].setColor("#9999FF")||p[1].refresh(rc));
     } else {
         const tree=qt.findTreeFromPoint(mouse);
         if (tree) {

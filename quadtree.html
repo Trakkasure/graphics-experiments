@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Test Genetic Code</title>
+</head>
+<body>
+    <div id="backgroundCanvas"></div>
+    <div id="canvas"></div>
+
+    <div>
+        <button id="startTree">Start Tree Animation</button>
+        <button id="stopTree">Stop Tree Animation</button>
+    </div>
+
+    <div>
+        <form>
+        Find Mode <br /> Point: <input type="radio" name="mode" value="point" />
+        Range: <input type="radio" name="mode" value="range" checked />
+        Show Tree: <input type="checkbox" value="1" id="showHideTree" />
+        <div>
+            Range Size: <br />
+            X: <input name="rx" type="range" min="20" max="400" oninput="this.form.elements.x.value=this.value" name="xrange" /> <input type="text" disabled name="x" />
+            Y: <input name="ry" type="range" min="20" max="400" oninput="this.form.elements.y.value=this.value" name="xrange" /> <input type="text" disabled name="y" />
+        </div>
+        </form>
+    </div>
+</body>
+    <script src="qt.js"></script>
+</html>
