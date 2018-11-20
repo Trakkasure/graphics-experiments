@@ -6,30 +6,24 @@ import { Bounds, Rect, Point2D, isRect } from "./datastructures";
 import { Drawing,CompositeDrawing } from "./drawing";
 import { Movable } from "./movable";
 
-export class Obstacle extends Drawing {
+export class Obstacle extends Movable {
 
-    position: Point2D;
     // Award granted to player contacting this item.
     award: number;
     // Multiplier to vector of player crossing this item.
     vectorMultiplier: number;
 
-    size: number;
-    scale: number;
-
-    constructor(x: number=0 , y: number=0, size: number=1, scale: number=80) {
-        super();
-        this.position = new Point2D(x,y);
-        this.size=size;
-        this.scale=scale;
+    constructor(x: number=0 , y: number=0, protected _radius: number=1, protected scale: number=80) {
+        super(x,y);
     }
 
     refresh(surface: RoughCanvas|RoughCanvasAsync,color: string="red") {
-        this.drawing=<Drawable>surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
+        // this.drawing=<Drawable>surface.generator.circle(this.position.x,this.position.y,this.size*this.scale,{stroke:color,fillStyle: 'solid',fill:color});
+        this.drawing=<Drawable>surface.generator.circle(0,0,this._radius*this.scale,{stroke:color,fillStyle:'solid',fill:color});
     }
 
-    moveTo(x: number,y: number) {
-        this.position = new Point2D(x,y);
+    getBounds():Bounds {
+        return {x1:this._position.x-this._radius,x2:this._position.x+this._radius,y1:this._position.y-this._radius,y2:this._position.y+this._radius};
     }
 
     setScale(s: number=80) {
@@ -37,94 +31,29 @@ export class Obstacle extends Drawing {
     }
 
     setSize(s: number=1) {
-        this.size=s;
+        this._radius=s;
     }
 }
 
-export class Ball extends Movable implements Rect {
+export class Ball extends Movable {
 
     color: string = "blue";
-    constructor(x: number=0 , y: number=0, private radius: number=12, mass: number=1) {
+    constructor(x: number=0 , y: number=0, private _radius: number=12) {
         super(x, y);
-        this.mass=mass;
     }
 
     setColor(c) {
         this.color=c;
     }
-    // tick(time: number=0,surface: RoughCanvas): void {
-    //     this.edge(surface.canvas.width,surface.canvas.height);
-    //     return super.tick(time,surface);
-    // }
-
-    /* Returns true if point is within the tree */
-    contains(p: Point2D) {
-        const b = this.getBounds();
-        return (
-            (p.x<=b.x2&&p.x>b.x1)&&
-            (p.y<=b.y2&&p.y>b.y1)
-        );
-    }
 
     refresh(surface: RoughCanvas): void {
-        this.drawing = surface.generator.circle(0,0,this.radius*2,{stroke:this.color,fillStyle:'solid',fill:this.color});
+        // Ball is positioned based on "_position" of Movable.
+        this.drawing = surface.generator.circle(0,0,this._radius*2,{stroke:this.color,fillStyle:'solid',fill:this.color});
     }
-
 
     getBounds():Bounds {
-        const p = this.position;
-        return {x1:p.x-this.radius,x2:p.x+this.radius,y1:p.y-this.radius,y2:p.y+this.radius};
+        return {x1:this._position.x-this._radius,x2:this._position.x+this._radius,y1:this._position.y-this._radius,y2:this._position.y+this._radius};
     }
-
-    exits(b: Bounds): boolean {
-        const p = this.getBounds();
-        return (
-            (p.x1<b.x1||p.x2>b.x2)||
-            (p.y1<b.y2||p.y2>b.y1)
-        );
-    }
-
-    // intersects(b: Bounds): boolean {
-    //     const p = this.getBounds();
-    //     return (
-    //         (p.x1>b.x2&&p.x2<b.x1||
-    //         p.x1<b.x2&&p.x2>b.x1)&&
-    //         (p.y1>b.y2&&p.y2<b.y1||
-    //         p.y1<b.y2&&p.y2>b.y1)
-    //     );
-    // }
-
-    /* Returns true if all vertexes are within bounds */
-    intersects(obj: Rect | Bounds): boolean {
-        const b = isRect(obj)?obj.getBounds():obj;
-        return (
-            this.contains(<Point2D>{x:b.x1,y:b.y1})
-            &&this.contains(<Point2D>{x:b.x2,y:b.y1})
-            &&this.contains(<Point2D>{x:b.x1,y:b.y2})
-            &&this.contains(<Point2D>{x:b.x2,y:b.y2})
-        );
-    }
-
-    getIntersection(obj: Rect | Bounds): Bounds {
-        const b = isRect(obj)?obj.getBounds():obj;
-        if (!this.intersects(b))
-            return {
-                x1:0,
-                x2:0,
-                y1:0,
-                y2:0
-            };
-        const p = this.getBounds();
-        const x = [p.x1,p.x2,b.x1,b.x2].sort();
-        const y = [p.y1,p.y2,b.y1,b.y2].sort();
-        return {
-            x1:x[1],
-            x2:x[2],
-            y1:y[1],
-            y2:y[2]
-        };
-    }
-
 }
 
 export class Player extends Movable {
@@ -146,8 +75,12 @@ export class Player extends Movable {
         this.offset=new Point2D(16,0);
     }
 
+    getBounds(): Bounds {
+        return {x1:this._position.x-4 ,y1: this._position.y-16,x2: this._position.x+4,y2: this._position.y+16};
+    }
+
     tick(time,surface) {
-        this.accelleration=this._attractionVector.sub(this.position).limit(this._turnLimit);
+        this.accelleration=this._attractionVector.sub(this._position).limit(this._turnLimit);
         super.tick(time,surface);
     }
 
@@ -189,62 +122,28 @@ export class Axis extends CompositeDrawing {
     }
 }
 
-export class Box extends Drawing implements Rect {
+export class Box extends Movable {
 
     color: string="white";
+    w: number;
+    h: number;
+
     static fromBounds(b:Bounds):Box {
         return new Box(b.x1,b.y1,b.x2,b.y2);
     }
-    constructor(protected x1:number,protected y1:number,protected x2:number,protected y2:number) {
-        super();
+    constructor(x1:number,y1:number,x2:number,y2:number) {
+        super(x1,y1);
+        this.w=x2-x1;
+        this.h=y2-y1;
     }
 
     getBounds():Bounds {
-        return {x1:this.x1,x2:this.x2,y1:this.y1,y2:this.y2};
+        return {x1:this._position.x+this.offset.x,x2:this._position.x+this.w+this.offset.x,y1:this._position.y+this.offset.y,y2:this._position.y+this.h+this.offset.y};
     }
 
     notIntersects(b: Bounds): boolean {
-        return (this.x2<b.x1||b.x2<this.x1||this.y2<b.y1||b.y2<this.y1)
-    }
-
-    intersects(b: Bounds): boolean {
-        return (this.x2<b.x1||b.x2<this.x1||this.y2<b.y1||b.y2<this.y1)
-    }
-
-    /* Returns true if point is within the tree */
-    contains(p: Point2D) {
-        const b = this.getBounds();
-        return (
-            (p.x<=b.x2&&p.x>b.x1)&&
-            (p.y<=b.y2&&p.y>b.y1)
-        );
-    }
-
-    getIntersection(obj: Rect | Bounds): Bounds {
-        const b = isRect(obj)?obj.getBounds():obj;
-        if (!this.intersects(b))
-            return {
-                x1:0,
-                x2:0,
-                y1:0,
-                y2:0
-            };
-        const x = [this.x1,this.x2,b.x1,b.x2].sort();
-        const y = [this.y1,this.y2,b.y1,b.y2].sort();
-        return {
-            x1:x[1],
-            x2:x[2],
-            y1:y[1],
-            y2:y[2]
-        };
-    }
-
-    exits(b: Bounds): boolean {
-        const p = this.getBounds();
-        return (
-            (p.x1<b.x1||p.x2>b.x2)||
-            (p.y1<b.y2||p.y2>b.y1)
-        );
+        const b2 = this.getBounds();
+        return (b2.x2<b.x1||b2.x2<b.x1||b2.y2<b.y1||b.y2<b2.y1)
     }
 
     setColor(color: string):void {
@@ -252,26 +151,21 @@ export class Box extends Drawing implements Rect {
     }
 
     refresh(surface) {
-        const w=this.x2-this.x1;
-        const h=this.y2-this.y1;
-        this.drawing=surface.generator.rectangle(this.x1, this.y1, w, h, {stroke:this.color});
+        this.drawing=surface.generator.rectangle(0,0, this.w, this.h, {stroke:this.color});
+    }
+
+    setSize(w: number,h: number) {
+        // Force drawing update on demand of render.
+        this.drawing=null;
+        this.w=w;
+        this.h=h;
     }
 }
 
-export class vScreen extends Box implements Rect {
+export class vScreen extends Box {
 
-    constructor(private w: number, private h: number) {
-        super(0,0,0,0);
-    }
-
-    refresh(surface) {
-        const centerX = surface.canvas.width/2;
-        const centerY = surface.canvas.height/2;
-        this.x1=centerX-this.w/2;
-        this.y1=centerY-this.h/2;
-        this.x2=this.x1+this.w;
-        this.y2=this.y1+this.h;
-        this.drawing=surface.generator.rectangle(this.x1, this.y1, this.w, this.h, {stroke:this.color});
+    constructor(w: number, h: number) {
+        super(0,0,w,h);
     }
 }
 
@@ -293,8 +187,7 @@ export class VLine extends Drawing {
     }
     refresh(surface) {
         this.drawing=
-            surface.generator.line(this.root.x,this.root.y,this.root.x+this.vec.mx,this.root.y+this.vec.my,{stroke:this.color})
-        ;
+            surface.generator.line(this.root.x,this.root.y,this.root.x+this.vec.mx,this.root.y+this.vec.my,{stroke:this.color});
     }
 
     setRoot(root: Point2D) {
