@@ -3,13 +3,19 @@ const path=require('path');
 // const fs=require('fs');
 
 const SRC = path.resolve(__dirname,'index.ts');
-const SRC2 = path.resolve(__dirname,'charts.js');
+const QT = path.resolve(__dirname,'quadTree.ts');
+const BOUNDS = path.resolve(__dirname,'bounds.ts');
+const COLLISION = path.resolve(__dirname,'collision.ts');
+const AXIS = path.resolve(__dirname,'axis.ts');
 const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
     entry: {
       'ui': SRC
-    // , 'bc': SRC2
+    , 'qt': QT
+    , 'bounds': BOUNDS
+    , 'collision': COLLISION
+    , 'axis': AXIS
     }
   , resolve: {
       extensions: ['.js','.ts']
@@ -19,8 +25,7 @@ module.exports = {
     , filename: '[name].js'
     }
   , module: {
-      rules: [
-      {
+      rules: [{
           test: /\.(jsx?|ts)$/
         , exclude: /node_modules/
         , use: {
@@ -37,39 +42,9 @@ module.exports = {
                 ]
             }
         }
-      }
-      ]
+      }]
     }
-  , plugins: [
-    // , new webpack.optimize.UglifyJsPlugin({
-    //     compress: {
-    //       warnings: false,
-    //       properties: true,
-    //       sequences: true,
-    //       dead_code: true,
-    //       conditionals: true,
-    //       comparisons: true,
-    //       evaluate: true,
-    //       booleans: true,
-    //       unused: true,
-    //       loops: true,
-    //       hoist_funs: true,
-    //       cascade: true,
-    //       if_return: true,
-    //       join_vars: true,
-    //       //drop_console: true,
-    //       drop_debugger: true,
-    //       negate_iife: true,
-    //       unsafe: false,
-    //       hoist_vars: true,
-    //       //side_effects: true
-    //     },
-    //     output: {
-    //       comments: false
-    //     }
-    //    //sourceMap: true,
-    //   })
-    ]
+  , plugins: []
   , stats: { colors: true }
   , devtool: 'source-map'
   , devServer: {
