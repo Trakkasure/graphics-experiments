@@ -78,7 +78,8 @@ export class QuadTree implements Rect {
     }
     /* Returns true if point is within the tree */
     contains(p: Point2D) {
-        const b = this._bounds;
+        if (!p) return false;
+        const b = this.getBounds();
         return (
             (p.x<=b.x2&&p.x>b.x1)&&
             (p.y<=b.y2&&p.y>b.y1)
@@ -88,20 +89,14 @@ export class QuadTree implements Rect {
     /* Returns true if any vertex is within _bounds */
     intersects(obj: Bounds | Rect): boolean {
         const b = isRect(obj)?obj.getBounds():obj;
-        return((obj.x1<=b.x2&&obj.x1>b.x1)&&
-            (obj.y1<=b.y2&&obj.y1>b.y1))
-          ||((obj.x2<=b.x2&&obj.x2>b.x1)&&
-            (obj.y1<=b.y2&&obj.y1>b.y1))
-          ||((obj.x1<=b.x2&&obj.x1>b.x1)&&
-            (obj.y2=b.y2&&obj.y2>b.y1))
-          ||((obj.x2<=b.x2&&obj.x2>b.x1)&&
-            (obj.y2<=b.y2&&obj.y2>b.y1))
-        // return (
-        //     this.contains(<Point2D>{x:b.x1,y:b.y1})
-        //   ||this.contains(<Point2D>{x:b.x2,y:b.y1})
-        //   ||this.contains(<Point2D>{x:b.x1,y:b.y2})
-        //   ||this.contains(<Point2D>{x:b.x2,y:b.y2})
-        // );
+        const p = this.getBounds();
+        return ((p.x1<=b.x1&&p.x2>b.x1)&&  // p.x1 < b.x1 < p.x2  - Upper left of B is within P
+            ((p.y1<=b.y1&&p.y2>b.y1)||     // p.y1 < b.y1 < p.y2  - Upper left of B is within P
+            (p.y1<=b.y2&&p.y2>b.y2))       // p.y1 < b.y2 < p.y2  - Lower left of B is within P
+          ||((p.x1<=b.x2&&p.x2>b.x2)&&     // p.x1 < b.x2 < p.x2  - Lower Right of B is within P
+            ((p.y1<=b.y2&&p.y2>b.y2)||     // p.y1 < b.y2 < p.y2  - Lower Right of B is within P
+            (p.y1<=b.y1&&p.y2>b.y1)))      // p.y1 < b.y2 < p.y2  - Upper Right of B is within P
+        );
     }
 
     exits(obj: Rect | Bounds) {
@@ -165,7 +160,7 @@ export class QuadTree implements Rect {
     }
 
     find(range: Rect): Array<[Point2D,any]> {
-        if (!this.intersects(range)) return [];
+        if (!range.intersects(this.getBounds())&&!this.intersects(range)) return [];
         if (this._divided) {
             return this._children.reduce((a: Array<[Point2D,any]>, c:QuadTree)=>a.concat(c.find(range)),[]);
         }
