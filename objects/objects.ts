@@ -1,10 +1,10 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { RoughCanvasAsync } from "roughjs/bin/canvas-async";
 import { Drawable } from "roughjs/bin/core";
-import { Vector2D } from "./physics";
-import { Bounds, Rect, Point2D, isRect } from "./datastructures";
-import { Drawing,CompositeDrawing } from "./drawing";
-import { Movable } from "./movable";
+import { Vector2D } from "./DataModel/Physics";
+import { Bounds, Point2D } from "./DataModel/DataStructures";
+import { Drawing,CompositeDrawing } from "./graphics/Drawing";
+import { Movable } from "./graphics/Movable";
 
 export class Obstacle extends Movable {
 

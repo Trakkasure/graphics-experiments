@@ -3,10 +3,12 @@ const path=require('path');
 // const fs=require('fs');
 
 const SRC = path.resolve(__dirname,'index.ts');
-const QT = path.resolve(__dirname,'quadTree.ts');
-const BOUNDS = path.resolve(__dirname,'bounds.ts');
-const COLLISION = path.resolve(__dirname,'collision.ts');
-const AXIS = path.resolve(__dirname,'axis.ts');
+const QT = path.resolve(__dirname,'demos/quadTree.ts');
+const BOUNDS = path.resolve(__dirname,'demos/bounds.ts');
+const COLLISION = path.resolve(__dirname,'demos/collision.ts');
+const AXIS = path.resolve(__dirname,'demos/axis.ts');
+const GAME = path.resolve(__dirname,'objects/Game.ts');
+const GEN = path.resolve(__dirname,'demos/generation.ts');
 const DST = path.resolve(__dirname,'dist');
 
 module.exports = {
@@ -16,6 +18,7 @@ module.exports = {
     , 'bounds': BOUNDS
     , 'collision': COLLISION
     , 'axis': AXIS
+    , 'generation': GEN
     }
   , resolve: {
       extensions: ['.js','.ts']

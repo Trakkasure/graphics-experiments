@@ -1,9 +1,9 @@
 import rough from 'roughjs';
 import { RoughCanvas } from 'roughjs/bin/canvas';
-import { Ball, vScreen, Box } from './objects/objects';
-import { Animator } from './objects/animator';
-import { Point2D, Bounds } from './objects/datastructures';
-import { Vector2D } from './objects/physics';
+import { Ball, vScreen, Box } from '../objects/objects';
+import { Animator } from '../objects/graphics/Animator';
+import { Point2D, Bounds } from '../objects/DataModel/DataStructures';
+import { Vector2D } from '../objects/DataModel/Physics';
 import "@babel/polyfill";
 
 // attrbutes set on canvas element

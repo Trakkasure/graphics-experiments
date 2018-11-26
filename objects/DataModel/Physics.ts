@@ -1,4 +1,4 @@
-import { Point2D } from "./datastructures";
+import { Point2D } from "./DataStructures";
 
 export class Vector2D {
     // Using magnitude per-axis method for vectors.

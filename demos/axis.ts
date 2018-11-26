@@ -1,9 +1,8 @@
 import rough from 'roughjs';
-import { Ball, Food, Poison, Obstacle, Player, VLine, vScreen, Axis, Box } from './objects/objects';
-import { Animator } from './objects/animator';
-import { Point2D, QuadTree, Bounds } from './objects/datastructures';
-import { Vector2D } from './objects/physics';
-import { random } from './utils';
+import { Ball, Food, Poison, Obstacle, Player, VLine, vScreen, Axis, Box } from '../objects/objects';
+import { Animator } from '../objects/graphics/Animator';
+import { Point2D, QuadTree, Bounds } from '../objects/DataModel/DataStructures';
+import { Vector2D } from '../objects/DataModel/Physics';
 import "@babel/polyfill";
 
 // attrbutes set on canvas element

@@ -1,4 +1,4 @@
-import { Vector2D } from "./physics";
+import { Vector2D } from "./Physics";
 
 export class Point2D {
     // Point

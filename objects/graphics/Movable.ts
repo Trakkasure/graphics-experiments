@@ -1,7 +1,7 @@
 import { RoughCanvas } from "roughjs/bin/canvas";
-import {Vector2D} from "./physics";
-import {Point2D, Rect, isRect, Bounds} from "./datastructures";
-import {Drawing,CompositeDrawing} from "./drawing";
+import {Vector2D} from "../DataModel/Physics";
+import {Point2D, Rect, isRect, Bounds} from "../DataModel/DataStructures";
+import {Drawing,CompositeDrawing} from "./Drawing";
 
 // Rect is for defining bounding box. Used mostly for collision detection.
 export abstract class Movable extends Drawing implements Rect {

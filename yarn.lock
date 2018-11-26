@@ -4007,6 +4007,11 @@ schema-utils@^0.4.4, schema-utils@^0.4.5:
     ajv "^6.1.0"
     ajv-keywords "^3.1.0"
 
+seedrandom@^2.4.4:
+  version "2.4.4"
+  resolved "https://registry.yarnpkg.com/seedrandom/-/seedrandom-2.4.4.tgz#b25ea98632c73e45f58b77cfaa931678df01f9ba"
+  integrity sha512-9A+PDmgm+2du77B5i0Ip2cxOqqHjgNxnBgglxLcX78A2D6c2rTo61z4jnVABpF4cKeDMDG+cmXXvdnqse2VqMA==
+
 semiotic-mark@0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/semiotic-mark/-/semiotic-mark-0.3.0.tgz#bd658e82031793fcb99cb238fe1ef9fdecc07d8d"

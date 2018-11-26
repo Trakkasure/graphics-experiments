@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Test Game Code</title>
+</head>
+<body>
+    <div id="canvas">
+    </div>
+    <form>
+        RNG seed: <input type="text" value="test seed" name="rngSeed" />
+        <br />
+        Scale: <input type="text" disabled value="" name="scale" /><input name="scaleRange" type="range" min="1" max="8" oninput="this.form.elements.scale.value=this.value" />
+        <br />
+        Smoothing: <input type="text" disabled value="" name="smoothing" /><input name="smootheRange" type="range" min="2" max="32" oninput="this.form.elements.smoothing.value=this.value" />
+        <br />
+        Turbulance: <input type="text" disabled value="" name="turbulence" /><input name="turbulenceRange" type="range" min="2" max="64" step="4" oninput="this.form.elements.turbulence.value=this.value" />
+        <br />
+        Distortion: <input type="text" disabled value="" name="distortion" /><input name="distortionRange" type="range" min="1" max="64" step="1" oninput="this.form.elements.distortion.value=this.value" />
+        <br />
+        Tree Rings: <input type="text" disabled value="" name="rings" /><input name="ringsRange" type="range" min="1" max="16" step="1" oninput="this.form.elements.rings.value=this.value" />
+    </form>
+</body>
+
+<script type="text/javascript" src="generation.js"></script>
+</html>
